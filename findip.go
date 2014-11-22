@@ -6,13 +6,14 @@ import (
 	"net"
 )
 
-func processAddr(addr *net.Addr) (string, bool) {
+// return address string, is ip4, is external address
+func processAddr(addr *net.Addr) (string, bool, bool) {
 	net, ok := (*addr).(*net.IPNet)
 	if !ok {
-		return "", false
+		return "", false, false
 	}
 	ip := net.IP
-	return ip.String(), ip.DefaultMask() != nil
+	return ip.String(), ip.DefaultMask() != nil, ip.IsGlobalUnicast()
 }
 
 func main() {
@@ -36,8 +37,11 @@ func main() {
 		addrs, _ := iface.Addrs()
 
 		for _, addr := range addrs {
-			straddr, ip4 := processAddr(&addr)
+			straddr, ip4, external := processAddr(&addr)
 
+			if !external {
+				continue
+			}
 			if !ip4 && typ == 4 {
 				continue
 			}
